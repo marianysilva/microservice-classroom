@@ -4,59 +4,68 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
-
 	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
 )
 
-type listClassroomResponse struct {
-	Classrooms []findClassroomResponse `json:"classrooms"`
+type ListClassroomsResponse struct {
+	Classrooms []ClassroomResponse `json:"classrooms"`
 }
 
-func NewListClassroomHandler(s domain.ServiceInterface, opts ...kithttp.ServerOption) *kithttp.Server {
+// NewListClassroomsHandler list classrooms handler
+// @Summary      List classrooms
+// @Description  List a new classrooms
+// @Tags         classrooms
+// @Produce      json
+// @Success      200      {object}  ListClassroomsResponse
+// @Failure      400      {object}  error
+// @Failure      404      {object}  error
+// @Failure      500      {object}  error
+// @Router       /classrooms [get].
+func NewListClassroomsHandler(s domain.ServiceInterface, opts ...kithttp.ServerOption) *kithttp.Server {
 	return kithttp.NewServer(
-		makeListClassroomEndpoint(s),
-		decodeListClassroomRequest,
-		encodeListClassroomResponse,
+		makeListClassroomsEndpoint(s),
+		decodeListClassroomsRequest,
+		encodeListClassroomsResponse,
 		opts...,
 	)
 }
 
-func makeListClassroomEndpoint(s domain.ServiceInterface) endpoint.Endpoint {
+func makeListClassroomsEndpoint(s domain.ServiceInterface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		classrooms, err := s.Classrooms(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		var list []findClassroomResponse
+		var list []ClassroomResponse
 		for i := range classrooms {
-			c := classrooms[i]
-			list = append(list, findClassroomResponse{
-				UUID:         c.UUID,
-				Code:         c.Code,
-				Name:         c.Name,
-				Description:  c.Description,
-				Format:       c.Format,
-				CanSubscribe: c.CanSubscribe,
-				StartsAt:     c.StartsAt,
-				EndsAt:       c.EndsAt,
-				SubjectID:    c.SubjectID,
-				CourseID:     c.CourseID,
-				CreatedAt:    c.CreatedAt,
-				UpdatedAt:    c.UpdatedAt,
+			classroom := classrooms[i]
+			list = append(list, ClassroomResponse{
+				UUID:         classroom.UUID,
+				Code:         classroom.Code,
+				SubjectUUID:  classroom.SubjectUUID,
+				CourseUUID:   classroom.CourseUUID,
+				Name:         classroom.Name,
+				CanSubscribe: classroom.CanSubscribe,
+				Description:  classroom.Description,
+				Format:       classroom.Format,
+				StartsAt:     classroom.StartsAt,
+				EndsAt:       classroom.EndsAt,
+				CreatedAt:    classroom.CreatedAt,
+				UpdatedAt:    classroom.UpdatedAt,
 			})
 		}
 
-		return &listClassroomResponse{Classrooms: list}, nil
+		return &ListClassroomsResponse{Classrooms: list}, nil
 	}
 }
 
-func decodeListClassroomRequest(_ context.Context, _ *http.Request) (interface{}, error) {
+func decodeListClassroomsRequest(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
-func encodeListClassroomResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+func encodeListClassroomsResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	return kithttp.EncodeJSONResponse(ctx, w, response)
 }

@@ -128,7 +128,7 @@ execute the following command:
 $ make run
 ```
 
-Once it is running you can test it: http://localhost:8080/health
+Once it is running you can test it: http://localhost:8081/health
 
 ### Container run
 
@@ -149,7 +149,7 @@ $ make container-run
 Keep in mind that, in both cases, it will load the `config/config.yml` file from the project. If you want to change some
 configurations you can set the environment variables in your `docker-compose.yml` file, or edit the configuration file.
 
-Once you have the IP address you can now access the endpoint: http://localhost:8080/health
+Once you have the IP address you can now access the endpoint: http://localhost:8081/health
 
 ## Configuring
 
@@ -160,10 +160,10 @@ to decide. If you want to use the variables, be sure to prefix it all with `SUME
 The list of the environment variables and it's default values:
 
 ```bash
-SUMELMS_SERVER_HTTP_PORT = 8080
+SUMELMS_SERVER_HTTP_PORT = 8081
 SUMELMS_DATABASE_DRIVER = "postgres"
 SUMELMS_DATABASE_HOST = "localhost"
-SUMELMS_DATABASE_PORT = 5432
+SUMELMS_DATABASE_PORT = 5433
 SUMELMS_DATABASE_USER = nil
 SUMELMS_DATABASE_PASSWORD = nil
 SUMELMS_DATABASE_DATABASE = "sumelms_classroom"

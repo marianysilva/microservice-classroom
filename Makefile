@@ -13,7 +13,7 @@ CONFIG_PATH ?= ./config/config.yml
 # Database / Migration
 SUMELMS_DATABASE_DRIVER ?= postgres
 SUMELMS_DATABASE_HOST ?= localhost
-SUMELMS_DATABASE_PORT ?= 5432
+SUMELMS_DATABASE_PORT ?= 5433
 SUMELMS_DATABASE_USER ?= postgres
 SUMELMS_DATABASE_PASSWORD ?= password
 SUMELMS_DATABASE_SSL ?= disable
@@ -134,7 +134,7 @@ container-run: container-build ## Run the container image
 		--name $(CONTAINER_NAME) \
 		-e SUMELMS_CONFIG_PATH=/config/config.yml \
 		-v ./config:/config \
-		-p 8080:8080 \
+		-p 8081:8081 \
 		$(IMAGE)
 
 .PHONY: container-image-push

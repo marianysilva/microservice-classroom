@@ -2,60 +2,57 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
-
-	"github.com/go-kit/log"
-	"golang.org/x/sync/errgroup"
-
+	_ "github.com/lib/pq"
 	"github.com/sumelms/microservice-classroom/internal/classroom"
+	"github.com/sumelms/microservice-classroom/internal/shared"
 	"github.com/sumelms/microservice-classroom/pkg/config"
 	database "github.com/sumelms/microservice-classroom/pkg/database/postgres"
-
-	applogger "github.com/sumelms/microservice-classroom/pkg/logger"
-
-	_ "github.com/lib/pq"
+	log "github.com/sumelms/microservice-classroom/pkg/logger"
+	"github.com/sumelms/microservice-classroom/swagger"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
 	logger     log.Logger
-	httpServer *http.Server
+	httpServer *shared.Server
 )
 
 //nolint:funlen
 func main() {
 	// Logger
-	logger = applogger.NewLogger()
-	logger.Log("msg", "service started") //nolint: errcheck
+	logger = log.NewLogger()
+	logger.Log("msg", "service started")
 
 	// Configuration
 	cfg, err := loadConfig()
 	if err != nil {
-		logger.Log("exit", err) //nolint: errcheck
+		logger.Log("msg", "exit", "error", err)
 		os.Exit(-1)
 	}
 
 	// Database
 	db, err := database.Connect(cfg.Database)
 	if err != nil {
-		logger.Log("msg", "database error", err) //nolint: errcheck
+		logger.Log("msg", "database error", "error", err)
 		os.Exit(1)
 	}
 
 	// Initialize the domain services
-	svcLogger := log.With(logger, "component", "service")
+	svcLogger := logger.With("component", "service")
 
-	classroomSvc, err := classroom.NewService(db, svcLogger)
+	classroomSvc, err := classroom.NewService(db, svcLogger.Logger())
 	if err != nil {
-		logger.Log("msg", "unable to start classroom service", err) //nolint: errcheck
+		logger.Log("msg", "unable to start classroom service", "error", err)
 		os.Exit(1)
 	}
 
+	// Gracefully shutdown
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(interrupt)
@@ -68,36 +65,28 @@ func main() {
 
 	g.Go(func() error {
 		// Initialize the router
-		router := mux.NewRouter()
+		router := mux.NewRouter().StrictSlash(true)
+		// Global Middlewares
+		router.Use(shared.CorsMiddleware)
+
+		// Register Swagger handler
+		swagger.Register(router)
 
 		// Initializing the HTTP Services
-		httpLogger := log.With(logger, "component", "http")
+		httpLogger := logger.With("component", "http")
 
-		if err := classroom.NewHTTPService(router, classroomSvc, httpLogger); err != nil {
-			logger.Log("msg", "unable to start a service: classroom", "error", err) //nolint: errcheck
+		if err = classroom.NewHTTPService(router, classroomSvc, httpLogger.Logger()); err != nil {
+			logger.Log("msg", "unable to start a service: classroom", "error", err)
 			return err
 		}
 
-		// Handle the mux & router
-		srv := http.NewServeMux()
-		srv.Handle("/", router)
-
-		// Middlewares
-		http.Handle("/", accessControl(srv))
-
-		logger.Log("transport", "http", "address", cfg.Server.HTTP.Host, "msg", "listening") //nolint: errcheck
-
-		httpServer = &http.Server{
-			Addr:              cfg.Server.HTTP.Host,
-			ReadTimeout:       10 * time.Second,
-			WriteTimeout:      10 * time.Second,
-			ReadHeaderTimeout: 2 * time.Second,
-		}
-
-		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+		// Create the HTTP Server
+		httpServer, err = shared.NewServer(cfg.Server.HTTP, router, httpLogger)
+		if err != nil {
 			return err
 		}
-		return nil
+
+		return httpServer.Start()
 	})
 
 	select {
@@ -107,24 +96,21 @@ func main() {
 		break
 	}
 
-	logger.Log("msg", "received shutdown signal") //nolint: errcheck
+	logger.Log("msg", "received shutdown signal")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 
 	if httpServer != nil {
-		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			logger.Log("msg", "server wasn't gracefully shutdown") //nolint: errcheck
-			defer os.Exit(2)
-		}
+		httpServer.Stop(shutdownCtx)
 	}
 
 	if err := g.Wait(); err != nil {
-		logger.Log("msg", "server returning an error", "error", err) //nolint: errcheck
+		logger.Log("msg", "server returning an error", "error", err)
 		defer os.Exit(2)
 	}
 
-	logger.Log("msg", "service ended") //nolint: errcheck
+	logger.Log("msg", "service ended")
 }
 
 func loadConfig() (*config.Config, error) {
@@ -140,18 +126,4 @@ func loadConfig() (*config.Config, error) {
 	}
 
 	return cfg, nil
-}
-
-func accessControl(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
-
-		if r.Method == "OPTIONS" {
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
 }

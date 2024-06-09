@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
@@ -9,47 +8,66 @@ import (
 )
 
 // NewClassroomRepository creates the subject subjectRepository
-func NewClassroomRepository(db *sqlx.DB) (classroomRepository, error) { //nolint: revive
+func NewClassroomRepository(db *sqlx.DB) (ClassroomRepository, error) { //nolint: revive
 	sqlStatements := make(map[string]*sqlx.Stmt)
 
 	for queryName, query := range queriesClassroom() {
 		stmt, err := db.Preparex(query)
 		if err != nil {
-			return classroomRepository{}, errors.WrapErrorf(err, errors.ErrCodeUnknown, "error preparing statement %s", queryName)
+			return ClassroomRepository{}, errors.WrapErrorf(err, errors.ErrCodeUnknown, "error preparing statement %s", queryName)
 		}
 		sqlStatements[queryName] = stmt
 	}
 
-	return classroomRepository{
+	return ClassroomRepository{
 		statements: sqlStatements,
 	}, nil
 }
 
-type classroomRepository struct {
+type ClassroomRepository struct {
 	statements map[string]*sqlx.Stmt
 }
 
-func (c classroomRepository) Classroom(id uuid.UUID) (domain.Classroom, error) {
-	//TODO implement me
-	panic("implement me")
+func (r ClassroomRepository) statement(s string) (*sqlx.Stmt, error) {
+	stmt, ok := r.statements[s]
+	if !ok {
+		return nil, errors.NewErrorf(errors.ErrCodeUnknown, "prepared statement %s not found", s)
+	}
+	return stmt, nil
 }
 
-func (c classroomRepository) Classrooms() ([]domain.Classroom, error) {
-	//TODO implement me
-	panic("implement me")
+func (r ClassroomRepository) Classrooms() ([]domain.Classroom, error) {
+	stmt, err := r.statement(listClassrooms)
+	if err != nil {
+		return []domain.Classroom{}, err
+	}
+
+	var cc []domain.Classroom
+	if err := stmt.Select(&cc); err != nil {
+		return []domain.Classroom{}, errors.WrapErrorf(err, errors.ErrCodeUnknown, "error getting classroom")
+	}
+	return cc, nil
 }
 
-func (c classroomRepository) CreateClassroom(classroom *domain.Classroom) (domain.Classroom, error) {
-	//TODO implement me
-	panic("implement me")
-}
+func (r ClassroomRepository) CreateClassroom(classroom *domain.Classroom) error {
+	stmt, err := r.statement(createClassroom)
+	if err != nil {
+		return err
+	}
 
-func (c classroomRepository) UpdateClassroom(classroom *domain.Classroom) (domain.Classroom, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c classroomRepository) DeleteClassroom(id uuid.UUID) error {
-	//TODO implement me
-	panic("implement me")
+	args := []interface{}{
+		classroom.Code,
+		classroom.CourseUUID,
+		classroom.SubjectUUID,
+		classroom.Name,
+		classroom.Description,
+		classroom.CanSubscribe,
+		classroom.Format,
+		classroom.StartsAt,
+		classroom.EndsAt,
+	}
+	if err := stmt.Get(classroom, args...); err != nil {
+		return errors.WrapErrorf(err, errors.ErrCodeUnknown, "error creating classroom")
+	}
+	return nil
 }

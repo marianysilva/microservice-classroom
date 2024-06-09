@@ -17,33 +17,49 @@ import (
 	"github.com/sumelms/microservice-classroom/pkg/validator"
 )
 
-type createClassroomRequest struct {
+type CreateClassroomRequest struct {
 	Code         string     `json:"code" validate:"required,max=15"`
+	SubjectUUID  *uuid.UUID `json:"subject_uuid"`
+	CourseUUID   uuid.UUID  `json:"course_uuid" validate:"required"`
 	Name         string     `json:"name" validate:"required,max=100"`
-	Description  string     `json:"description" validate:"max=255"`
-	Format       string     `json:"format" validate:"classroom_format"`
 	CabSubscribe bool       `json:"cab_subscribe"`
-	SubjectID    *uuid.UUID `json:"subject_id"`
-	CourseID     uuid.UUID  `json:"course_id" validate:"required"`
+	Description  string     `json:"description" validate:"max=255"`
+	Format       string     `json:"format"`
 	StartsAt     time.Time  `json:"starts_at" validate:"required"`
 	EndsAt       *time.Time `json:"ends_at"`
 }
 
-type createClassroomResponse struct {
+type ClassroomResponse struct {
 	UUID         uuid.UUID  `json:"uuid"`
 	Code         string     `json:"code"`
+	SubjectUUID  *uuid.UUID `json:"subject_uuid,omitempty"`
+	CourseUUID   uuid.UUID  `json:"course_uuid"`
 	Name         string     `json:"name"`
+	CanSubscribe bool       `json:"can_subscribe"`
 	Description  string     `json:"description"`
 	Format       string     `json:"format"`
-	CanSubscribe bool       `json:"can_subscribe"`
-	SubjectID    *uuid.UUID `json:"subject_id,omitempty"`
-	CourseID     uuid.UUID  `json:"course_id"`
 	StartsAt     time.Time  `json:"starts_at" validate:"required"`
 	EndsAt       *time.Time `json:"ends_at,omitempty"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
+type CreateClassroomResponse struct {
+	Classroom *ClassroomResponse `json:"classroom"`
+}
+
+// NewCreateClassroomHandler creates new course handler
+// @Summary      Create classroom
+// @Description  Create a new classroom
+// @Tags         classrooms
+// @Accept       json
+// @Produce      json
+// @Param        classroom	  body		CreateClassroomRequest		true	"Add Classroom"
+// @Success      200      {object}  CreateClassroomResponse
+// @Failure      400      {object}  error
+// @Failure      404      {object}  error
+// @Failure      500      {object}  error
+// @Router       /classrooms [post].
 func NewCreateClassroomHandler(s domain.ServiceInterface, opts ...kithttp.ServerOption) *kithttp.Server {
 	return kithttp.NewServer(
 		makeCreateClassroomEndpoint(s),
@@ -55,7 +71,7 @@ func NewCreateClassroomHandler(s domain.ServiceInterface, opts ...kithttp.Server
 
 func makeCreateClassroomEndpoint(s domain.ServiceInterface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(createClassroomRequest)
+		req, ok := request.(CreateClassroomRequest)
 		if !ok {
 			return nil, fmt.Errorf("invalid argument")
 		}
@@ -65,42 +81,37 @@ func makeCreateClassroomEndpoint(s domain.ServiceInterface) endpoint.Endpoint {
 			return nil, err
 		}
 
-		c := domain.Classroom{}
+		classroom := domain.Classroom{}
 		data, _ := json.Marshal(req)
-		err := json.Unmarshal(data, &c)
-		if err != nil {
+		if err := json.Unmarshal(data, &classroom); err != nil {
 			return nil, err
 		}
 
-		if req.SubjectID != nil {
-			c.SubjectID = req.SubjectID
-		}
-		c.CourseID = req.CourseID
-
-		created, err := s.CreateClassroom(ctx, &c)
-		if err != nil {
+		if err := s.CreateClassroom(ctx, &classroom); err != nil {
 			return nil, err
 		}
 
-		return createClassroomResponse{
-			UUID:         created.UUID,
-			Code:         created.Code,
-			Name:         created.Name,
-			Description:  created.Description,
-			Format:       created.Format,
-			CanSubscribe: created.CanSubscribe,
-			SubjectID:    created.SubjectID,
-			CourseID:     created.CourseID,
-			StartsAt:     created.StartsAt,
-			EndsAt:       created.EndsAt,
-			CreatedAt:    created.CreatedAt,
-			UpdatedAt:    created.UpdatedAt,
-		}, err
+		return &CreateClassroomResponse{
+			Classroom: &ClassroomResponse{
+				UUID:         classroom.UUID,
+				Code:         classroom.Code,
+				SubjectUUID:  classroom.SubjectUUID,
+				CourseUUID:   classroom.CourseUUID,
+				Name:         classroom.Name,
+				CanSubscribe: classroom.CanSubscribe,
+				Description:  classroom.Description,
+				Format:       classroom.Format,
+				StartsAt:     classroom.StartsAt,
+				EndsAt:       classroom.EndsAt,
+				CreatedAt:    classroom.CreatedAt,
+				UpdatedAt:    classroom.UpdatedAt,
+			},
+		}, nil
 	}
 }
 
 func decodeCreateClassroomRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req createClassroomRequest
+	var req CreateClassroomRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err

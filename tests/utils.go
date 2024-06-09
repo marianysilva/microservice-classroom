@@ -13,12 +13,15 @@ import (
 )
 
 var (
-	Now              = time.Now()
-	CourseUUID       = uuid.MustParse("e8276e31-9a87-4cf1-a16c-080f9c5790d1")
-	SubscriptionUUID = uuid.MustParse("dd7c915b-849a-4ba4-bc09-aeecd95c40cc")
-	UserUUID         = uuid.MustParse("ef2bc01e-be93-4a1f-9e96-c78d3d432088")
-	MatrixUUID       = uuid.MustParse("0ac0fe6f-4f34-468d-84f9-9e4fc56b0135")
-	EmptyRows        = sqlmock.NewRows([]string{})
+	Now                       = time.Now()
+	ClassroomUUID             = uuid.MustParse("00000000-0000-0000-0000-aaaaaaaaaaaa")
+	ClassroomSubscriptionUUID = uuid.MustParse("00000000-0000-0000-0000-bbbbbbbbbbbb")
+	ClassroomLessonUUID       = uuid.MustParse("00000000-0000-0000-0000-cccccccccccc")
+	ClassroomTimetable        = uuid.MustParse("00000000-0000-0000-0000-dddddddddddd")
+	UserUUID                  = uuid.MustParse("00000000-0000-0000-0000-111111111111")
+	CourseUUID                = uuid.MustParse("00000000-0000-0000-0000-222222222222")
+	SubjectUUID               = uuid.MustParse("00000000-0000-0000-0000-333333333333")
+	EmptyRows                 = sqlmock.NewRows([]string{})
 )
 
 func NewTestDB(queries map[string]string) (*sqlx.DB, sqlmock.Sqlmock, map[string]*sqlmock.ExpectedPrepare) {

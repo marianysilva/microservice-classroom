@@ -5,7 +5,7 @@ services:
   microservice:
     image: sumelms/sumelms-classroom
     ports:
-      - "8080:8080"
+      - "8081:8081"
     deploy:
       restart_policy:
         condition: on-failure
@@ -23,7 +23,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=sumelms_classroom
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - microservice_classroom_postgres:/var/lib/postgresql/data
     deploy:

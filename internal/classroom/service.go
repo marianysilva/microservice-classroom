@@ -4,11 +4,9 @@ import (
 	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
-
 	"github.com/sumelms/microservice-classroom/internal/classroom/database"
-	"github.com/sumelms/microservice-classroom/internal/classroom/transport"
+	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
+	"github.com/sumelms/microservice-classroom/internal/classroom/transport/http"
 )
 
 func NewService(db *sqlx.DB, logger log.Logger) (*domain.Service, error) {
@@ -27,6 +25,6 @@ func NewService(db *sqlx.DB, logger log.Logger) (*domain.Service, error) {
 }
 
 func NewHTTPService(router *mux.Router, service domain.ServiceInterface, logger log.Logger) error {
-	transport.NewHTTPHandler(router, service, logger)
+	http.NewHTTPHandler(router, service, logger)
 	return nil
 }
