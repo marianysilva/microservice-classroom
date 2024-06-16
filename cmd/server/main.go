@@ -11,6 +11,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sumelms/microservice-classroom/internal/classroom"
 	"github.com/sumelms/microservice-classroom/internal/shared"
+	"github.com/sumelms/microservice-classroom/internal/shared/clients"
+	courses "github.com/sumelms/microservice-classroom/internal/shared/clients/rpc"
 	"github.com/sumelms/microservice-classroom/pkg/config"
 	database "github.com/sumelms/microservice-classroom/pkg/database/postgres"
 	log "github.com/sumelms/microservice-classroom/pkg/logger"
@@ -46,7 +48,18 @@ func main() {
 	// Initialize the domain services
 	svcLogger := logger.With("component", "service")
 
-	classroomSvc, err := classroom.NewService(db, svcLogger.Logger())
+	// Initializing the HTTP Services
+	rpcLogger := logger.With("component", "rpc")
+
+	coursesClient, err := clients.NewCoursesClient(cfg, rpcLogger)
+	if err != nil {
+		logger.Log("msg", "unable to connect with course service", "error", err)
+		os.Exit(1)
+	}
+	coursesClientService := courses.NewCoursesService(coursesClient)
+	logger.Log("msg", "connection with courses client service started")
+
+	classroomSvc, err := classroom.NewService(db, svcLogger.Logger(), clients.ClientServices{Courses: *coursesClientService})
 	if err != nil {
 		logger.Log("msg", "unable to start classroom service", "error", err)
 		os.Exit(1)

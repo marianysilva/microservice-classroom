@@ -14,7 +14,17 @@ func (s *Service) Classrooms(_ context.Context) ([]Classroom, error) {
 	return cc, nil
 }
 
-func (s *Service) CreateClassroom(_ context.Context, classroom *Classroom) error {
+func (s *Service) CreateClassroom(ctx context.Context, classroom *Classroom) error {
+	isActiveCourse, err := s.courses.IsActiveCourse(ctx, classroom.CourseUUID)
+
+	if err != nil {
+		return fmt.Errorf("can't verify course uuid: %w", err)
+	}
+
+	if !isActiveCourse {
+		return fmt.Errorf("course uuid not found or inactive")
+	}
+
 	if err := s.classrooms.CreateClassroom(classroom); err != nil {
 		return fmt.Errorf("service can't create classroom: %w", err)
 	}

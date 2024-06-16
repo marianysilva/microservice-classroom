@@ -7,9 +7,10 @@ import (
 	"github.com/sumelms/microservice-classroom/internal/classroom/database"
 	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
 	"github.com/sumelms/microservice-classroom/internal/classroom/transport/http"
+	"github.com/sumelms/microservice-classroom/internal/shared/clients"
 )
 
-func NewService(db *sqlx.DB, logger log.Logger) (*domain.Service, error) {
+func NewService(db *sqlx.DB, logger log.Logger, clients clients.ClientServices) (*domain.Service, error) {
 	classroom, err := database.NewClassroomRepository(db)
 	if err != nil {
 		return nil, err
@@ -17,7 +18,8 @@ func NewService(db *sqlx.DB, logger log.Logger) (*domain.Service, error) {
 
 	service, err := domain.NewService(
 		domain.WithLogger(logger),
-		domain.WithClassroomRepository(classroom))
+		domain.WithClassroomRepository(classroom),
+		domain.WithCourseClientService(clients.Courses))
 	if err != nil {
 		return nil, err
 	}

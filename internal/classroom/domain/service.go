@@ -15,6 +15,7 @@ type ServiceConfiguration func(svc *Service) error
 
 type Service struct {
 	classrooms ClassroomRepository
+	courses    CourseClientService
 	logger     log.Logger
 }
 
@@ -33,6 +34,14 @@ func NewService(cfgs ...ServiceConfiguration) (*Service, error) {
 func WithClassroomRepository(repository ClassroomRepository) ServiceConfiguration {
 	return func(svc *Service) error {
 		svc.classrooms = repository
+
+		return nil
+	}
+}
+
+func WithCourseClientService(courses CourseClientService) ServiceConfiguration {
+	return func(svc *Service) error {
+		svc.courses = courses
 
 		return nil
 	}

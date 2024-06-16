@@ -1,6 +1,9 @@
 server:
   http:
     host: ":8081"
+rpcclients:
+  courses:
+    host: ":9000"
 database:
   driver: postgres
   host: localhost

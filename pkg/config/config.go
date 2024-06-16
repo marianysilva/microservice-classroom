@@ -12,6 +12,9 @@ type Config struct {
 	Server struct {
 		HTTP *HTTPServer `validate:"required"`
 	} `validate:"required"`
+	RPCClients struct {
+		Courses *RPCClient `validate:"required"`
+	} `validate:"required"`
 	Database *Database `validate:"required"`
 }
 
@@ -30,6 +33,10 @@ type HTTPServer struct {
 	Host     string `validate:"required"`
 	UseHTTPS bool
 	CertPath string
+}
+
+type RPCClient struct {
+	Host string `validate:"required"`
 }
 
 // NewConfig creates a new configurator.

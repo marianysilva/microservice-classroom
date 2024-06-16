@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package rpc;
+
+option go_package = "./internal/shared/clients/rpc/pb";
+
+service Courses {
+  rpc IsActiveCourse (CourseRequest) returns (CourseResponse) {}
+}
+
+message CourseRequest {
+  string CourseUUID = 1;
+}
+
+message CourseResponse {
+  bool isActive = 1;
+}
