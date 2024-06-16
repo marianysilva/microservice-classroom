@@ -13,11 +13,14 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.6
 	github.com/pkg/errors v0.9.1
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/sherifabdlnaby/configuro v0.0.2
+	github.com/sumelms/microservice-course v0.0.0-20240524131528-cd399baf1d97
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.2
 	golang.org/x/sync v0.6.0
 	google.golang.org/grpc v1.64.0
+	google.golang.org/protobuf v1.34.1
 )
 
 require (
@@ -67,5 +70,4 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240610135401-a8a62080eff3 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
 )

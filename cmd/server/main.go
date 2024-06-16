@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -44,6 +45,29 @@ func main() {
 		logger.Log("msg", "database error", "error", err)
 		os.Exit(1)
 	}
+
+	// Initializing the AMQP Connection
+	amqpLogger := logger.With("component", "amqp")
+
+	coursesAMQPConnection, err := shared.NewAMQPConnection(cfg.AMQPClients.Courses, amqpLogger)
+	if err != nil {
+		logger.Log("msg", "AMQP Connection error", "error", err)
+		os.Exit(1)
+	}
+
+	amqpDelivery, err := coursesAMQPConnection.Consume("MatricesQueue")
+	if err != nil {
+		logger.Log("msg", "AMQP Consume error", "error", err)
+		os.Exit(1)
+	}
+
+	forever := make(chan bool)
+	go func() {
+		for delivery := range amqpDelivery.Delivery {
+			fmt.Println("Received Message %s\n", delivery.Body)
+		}
+	}()
+	<-forever
 
 	// Initialize the domain services
 	svcLogger := logger.With("component", "service")
@@ -116,6 +140,10 @@ func main() {
 
 	if httpServer != nil {
 		httpServer.Stop(shutdownCtx)
+	}
+
+	if coursesAMQPConnection != nil {
+		coursesAMQPConnection.Connection.Close()
 	}
 
 	if err := g.Wait(); err != nil {

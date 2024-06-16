@@ -4,6 +4,9 @@ server:
 rpcclients:
   courses:
     host: ":9000"
+amqpclients:
+  courses:
+    host: "amqp://rabbitmq:secret@localhost:5672/"
 database:
   driver: postgres
   host: localhost
