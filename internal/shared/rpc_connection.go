@@ -24,6 +24,8 @@ func NewRPCConnection(cfg *config.RPCClient, logger logger.Logger) (*RPCConnecti
 		return nil, fmt.Errorf("unnable to connect with courses RPC server")
 	}
 
+	logger.Log("msg", "connected with RPC Server", "host", cfg.Host)
+
 	return &RPCConnection{
 		Connection: conn,
 		Config:     cfg,

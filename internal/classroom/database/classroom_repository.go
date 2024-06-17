@@ -71,3 +71,58 @@ func (r ClassroomRepository) CreateClassroom(classroom *domain.Classroom) error 
 	}
 	return nil
 }
+
+func (r ClassroomRepository) DeleteClassroom(classroom *domain.DeletedClassroom) error {
+	stmt, err := r.statement(deleteClassroomByUUID)
+	if err != nil {
+		return err
+	}
+
+	args := []interface{}{
+		classroom.UUID,
+	}
+	if err := stmt.Get(classroom, args...); err != nil {
+		return errors.WrapErrorf(err, errors.ErrCodeUnknown, "error deleting classroom")
+	}
+	return nil
+}
+
+func (r ClassroomRepository) DeleteClassroomsByCourse(classroom *domain.DeletedClassroom) ([]domain.DeletedClassroom, error) {
+	stmt, err := r.statement(deleteClassroomsByCourseUUID)
+	if err != nil {
+		return []domain.DeletedClassroom{}, err
+	}
+
+	args := []interface{}{
+		classroom.CourseUUID,
+	}
+	var deleted []domain.DeletedClassroom
+	if err := stmt.Get(&deleted, args...); err != nil {
+		return []domain.DeletedClassroom{}, errors.WrapErrorf(err, errors.ErrCodeUnknown, "error deleting classroom by course")
+	}
+	return deleted, nil
+}
+
+func (r ClassroomRepository) DeleteClassroomsBySubject(classroom *domain.DeletedClassroom) ([]domain.DeletedClassroom, error) {
+	stmt, err := r.statement(deleteClassroomsBySubjectUUID)
+	if err != nil {
+		return []domain.DeletedClassroom{}, err
+	}
+
+	args := []interface{}{
+		classroom.SubjectUUID,
+	}
+	var deleted []domain.DeletedClassroom
+	if err := stmt.Get(&deleted, args...); err != nil {
+		return []domain.DeletedClassroom{}, errors.WrapErrorf(err, errors.ErrCodeUnknown, "error deleting classroom by subject")
+	}
+	return deleted, nil
+}
+
+func (r ClassroomRepository) DeleteClassrooms(classroom *domain.DeletedClassroom) ([]domain.DeletedClassroom, error) {
+	if classroom.SubjectUUID != nil {
+		return r.DeleteClassroomsBySubject(classroom)
+	}
+
+	return r.DeleteClassroomsByCourse(classroom)
+}

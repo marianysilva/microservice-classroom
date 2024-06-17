@@ -31,3 +31,10 @@ func (s *Service) CreateClassroom(ctx context.Context, classroom *Classroom) err
 
 	return nil
 }
+
+func (s *Service) DeleteClassroom(_ context.Context, classroom *DeletedClassroom) error {
+	if err := s.classrooms.DeleteClassroom(classroom); err != nil {
+		return fmt.Errorf("service can't delete classroom: %w", err)
+	}
+	return nil
+}

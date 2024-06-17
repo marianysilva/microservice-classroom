@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,9 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/sumelms/microservice-classroom/internal/classroom"
+	"github.com/sumelms/microservice-classroom/internal/classroom/domain"
 	"github.com/sumelms/microservice-classroom/internal/shared"
 	"github.com/sumelms/microservice-classroom/internal/shared/clients"
-	courses "github.com/sumelms/microservice-classroom/internal/shared/clients/rpc"
+	rpc "github.com/sumelms/microservice-classroom/internal/shared/clients/rpc"
 	"github.com/sumelms/microservice-classroom/pkg/config"
 	database "github.com/sumelms/microservice-classroom/pkg/database/postgres"
 	log "github.com/sumelms/microservice-classroom/pkg/logger"
@@ -55,20 +55,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	amqpDelivery, err := coursesAMQPConnection.Consume("MatricesQueue")
-	if err != nil {
-		logger.Log("msg", "AMQP Consume error", "error", err)
-		os.Exit(1)
-	}
-
-	forever := make(chan bool)
-	go func() {
-		for delivery := range amqpDelivery.Delivery {
-			fmt.Println("Received Message %s\n", delivery.Body)
-		}
-	}()
-	<-forever
-
 	// Initialize the domain services
 	svcLogger := logger.With("component", "service")
 
@@ -80,10 +66,13 @@ func main() {
 		logger.Log("msg", "unable to connect with course service", "error", err)
 		os.Exit(1)
 	}
-	coursesClientService := courses.NewCoursesService(coursesClient)
-	logger.Log("msg", "connection with courses client service started")
+	coursesClientService := rpc.NewCoursesService(coursesClient)
+	logger.Log("msg", "RPC connection with courses client service started!")
+	classroomClients := clients.ClientServices{
+		Courses: *coursesClientService,
+	}
 
-	classroomSvc, err := classroom.NewService(db, svcLogger.Logger(), clients.ClientServices{Courses: *coursesClientService})
+	classroomSvc, err := classroom.NewService(db, classroomClients, svcLogger.Logger())
 	if err != nil {
 		logger.Log("msg", "unable to start classroom service", "error", err)
 		os.Exit(1)
@@ -125,6 +114,13 @@ func main() {
 
 		return httpServer.Start()
 	})
+
+	// Initialize AMQP Queue Consumer
+	err = domain.NewClassroomConsumer(coursesAMQPConnection, classroomSvc)
+	if err != nil {
+		logger.Log("msg", "unable to start classroom consumer", "error", err)
+		os.Exit(1)
+	}
 
 	select {
 	case <-interrupt:

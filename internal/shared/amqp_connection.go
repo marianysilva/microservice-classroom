@@ -16,6 +16,12 @@ type AMQPConnection struct {
 	logger     logger.Logger
 }
 
+type AMQPQueue struct {
+	Name    string
+	Queue   *amqp.Queue
+	Channel *amqp.Channel
+}
+
 type AMQPDelivery struct {
 	Name     string
 	Delivery <-chan amqp.Delivery
@@ -50,9 +56,36 @@ func NewAMQPConnection(cfg *config.AMQPClient, logger logger.Logger) (*AMQPConne
 	}, nil
 }
 
-func (conn AMQPConnection) Consume(queueName string) (*AMQPDelivery, error) {
-	msgs, err := conn.Channel.Consume(
+func (c AMQPConnection) NewAMQPQueue(queueName string) (*AMQPQueue, error) {
+	if c.Channel == nil {
+		c.logger.Log("msg", "unable to create RabbitMQ channel ")
+		return nil, fmt.Errorf("unable to use RabbitMQ channel")
+	}
+
+	queue, err := c.Channel.QueueDeclare(
 		queueName,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+
+	if err != nil {
+		c.logger.Log("msg", "unable to create RabbitMQ queue: ", "error", err)
+		return nil, err
+	}
+
+	return &AMQPQueue{
+		Name:    queueName,
+		Queue:   &queue,
+		Channel: c.Channel,
+	}, nil
+}
+
+func (queue AMQPQueue) Consume() (*AMQPDelivery, error) {
+	msgs, err := queue.Channel.Consume(
+		queue.Name,
 		"",
 		true,
 		false,
@@ -66,8 +99,8 @@ func (conn AMQPConnection) Consume(queueName string) (*AMQPDelivery, error) {
 	}
 
 	return &AMQPDelivery{
-		Name:     queueName,
+		Name:     queue.Name,
 		Delivery: msgs,
-		Channel:  conn.Channel,
+		Channel:  queue.Channel,
 	}, nil
 }

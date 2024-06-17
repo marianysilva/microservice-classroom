@@ -10,7 +10,7 @@ import (
 	"github.com/sumelms/microservice-classroom/internal/shared/clients"
 )
 
-func NewService(db *sqlx.DB, logger log.Logger, clients clients.ClientServices) (*domain.Service, error) {
+func NewService(db *sqlx.DB, clients clients.ClientServices, logger log.Logger) (*domain.Service, error) {
 	classroom, err := database.NewClassroomRepository(db)
 	if err != nil {
 		return nil, err
