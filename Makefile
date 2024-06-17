@@ -15,7 +15,7 @@ SUMELMS_DATABASE_DRIVER ?= postgres
 SUMELMS_DATABASE_HOST ?= localhost
 SUMELMS_DATABASE_PORT ?= 5433
 SUMELMS_DATABASE_USER ?= postgres
-SUMELMS_DATABASE_PASSWORD ?= password
+SUMELMS_DATABASE_PASSWORD ?= secret
 SUMELMS_DATABASE_SSL ?= disable
 SUMELMS_DATABASE_DATABASE = sumelms_classroom
 DATABASE_DSN := "${SUMELMS_DATABASE_DRIVER}://${SUMELMS_DATABASE_USER}:${SUMELMS_DATABASE_PASSWORD}@${SUMELMS_DATABASE_HOST}:${SUMELMS_DATABASE_PORT}/${SUMELMS_DATABASE_DATABASE}?sslmode=${SUMELMS_DATABASE_SSL}"
@@ -69,6 +69,7 @@ migration-down: ## Runs the migrations down
 
 .PHONY: swagger
 swagger: ## Generate Swagger Documentation
+	export PATH=${PATH}:${HOME}/go/bin
 	swag init -g swagger.go -d ./internal -o ./swagger
 
 ## --------------------------------------

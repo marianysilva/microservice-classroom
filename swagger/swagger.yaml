@@ -1,0 +1,176 @@
+basePath: /api/v1
+definitions:
+  endpoints.ClassroomResponse:
+    properties:
+      can_subscribe:
+        type: boolean
+      code:
+        type: string
+      course_uuid:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      ends_at:
+        type: string
+      format:
+        type: string
+      name:
+        type: string
+      starts_at:
+        type: string
+      subject_uuid:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    required:
+    - starts_at
+    type: object
+  endpoints.CreateClassroomRequest:
+    properties:
+      cab_subscribe:
+        type: boolean
+      code:
+        maxLength: 15
+        type: string
+      course_uuid:
+        type: string
+      description:
+        maxLength: 255
+        type: string
+      ends_at:
+        type: string
+      format:
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      starts_at:
+        type: string
+      subject_uuid:
+        type: string
+    required:
+    - code
+    - course_uuid
+    - name
+    - starts_at
+    type: object
+  endpoints.CreateClassroomResponse:
+    properties:
+      classroom:
+        $ref: '#/definitions/endpoints.ClassroomResponse'
+    type: object
+  endpoints.ListClassroomsResponse:
+    properties:
+      classrooms:
+        items:
+          $ref: '#/definitions/endpoints.ClassroomResponse'
+        type: array
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@sumelms.com
+    name: LMS Support
+    url: https://sumelms.com/support
+  description: This is the Sumé LMS API for Clasroom Microservice
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://sumelms.com/docs/terms
+  title: Sumé LMS Classroom API
+  version: "1.0"
+paths:
+  /classrooms:
+    get:
+      description: List a new classrooms
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/endpoints.ListClassroomsResponse'
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: List classrooms
+      tags:
+      - classrooms
+    post:
+      consumes:
+      - application/json
+      description: Create a new classroom
+      parameters:
+      - description: Add Classroom
+        in: body
+        name: classroom
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.CreateClassroomRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/endpoints.CreateClassroomResponse'
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: Create classroom
+      tags:
+      - classrooms
+securityDefinitions:
+  ApiKeyAuth:
+    description: Description for what is this security definition being used
+    in: header
+    name: Authorization
+    type: apiKey
+  BasicAuth:
+    type: basic
+  OAuth2AccessCode:
+    authorizationUrl: https://sso.sumelms.com/oauth/authorize
+    flow: accessCode
+    scopes:
+      admin: Grants read and write access to administrative information
+    tokenUrl: https://sso.sumelms.com/oauth/token
+    type: oauth2
+  OAuth2Application:
+    flow: application
+    scopes:
+      admin: Grants read and write access to administrative information
+      write: Grants write access
+    tokenUrl: https://sso.sumelms.com/oauth/token
+    type: oauth2
+  OAuth2Implicit:
+    authorizationUrl: https://sso.sumelms.com/oauth/authorize
+    flow: implicit
+    scopes:
+      admin: Grants read and write access to administrative information
+      write: Grants write access
+    type: oauth2
+  OAuth2Password:
+    flow: password
+    scopes:
+      admin: Grants read and write access to administrative information
+      read: Grants read access
+      write: Grants write access
+    tokenUrl: https://sso.sumelms.com/oauth/token
+    type: oauth2
+swagger: "2.0"

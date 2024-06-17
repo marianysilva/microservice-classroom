@@ -67,7 +67,9 @@ $ git clone git@github.com:sumelms/microservice-classroom.git
 Access the project folder, and download the Go dependencies
 
 ```bash
+$ go mod vendor
 $ go get ./...
+$ export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
 It may take a while to download all the dependencies, then you are [ready to build](#building).
@@ -107,6 +109,13 @@ You can have your local database running the following command:
 ```bash
 $ docker-compose up -d postgres
 ```
+
+Once it is running you can test it: `psql postgresql://postgres:secret@host:5433/sumelms_classroom`
+
+> *Note*
+> You will have to install the uuid-ossp extension: `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
+> You will have to install the [golang-migrate](https://github.com/golang-migrate/migrate) tool
+> It uses the same environment variables from the configuration section.
 
 And then you could run the migrations using
 
@@ -161,12 +170,12 @@ The list of the environment variables and it's default values:
 
 ```bash
 SUMELMS_SERVER_HTTP_PORT = 8081
-SUMELMS_DATABASE_DRIVER = "postgres"
-SUMELMS_DATABASE_HOST = "localhost"
+SUMELMS_DATABASE_DRIVER = postgres
+SUMELMS_DATABASE_HOST = localhost
 SUMELMS_DATABASE_PORT = 5433
-SUMELMS_DATABASE_USER = nil
-SUMELMS_DATABASE_PASSWORD = nil
-SUMELMS_DATABASE_DATABASE = "sumelms_classroom"
+SUMELMS_DATABASE_USER = postgres
+SUMELMS_DATABASE_PASSWORD = secret
+SUMELMS_DATABASE_DATABASE = sumelms_classroom
 ```
 
 > We are using [configuro](https://github.com/sherifabdlnaby/configuro) to manage the configuration, so the precedence
